@@ -1,5 +1,4 @@
 scalar Time
-scalar Map
 
 type Message {
   accountSid: String!
@@ -28,7 +27,6 @@ type Message {
   priceUnit: String
   sid: String!
   status: String!
-  subresourceURLs: Map!
   uri: String!
 }
 

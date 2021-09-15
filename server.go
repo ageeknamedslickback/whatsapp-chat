@@ -7,9 +7,12 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/ageeknamedslickback/whatsapp-chat/domain"
 	database "github.com/ageeknamedslickback/whatsapp-chat/infrastructure/db"
 	"github.com/ageeknamedslickback/whatsapp-chat/presentation/graph"
 	"github.com/ageeknamedslickback/whatsapp-chat/presentation/graph/generated"
+	"github.com/ageeknamedslickback/whatsapp-chat/presentation/rest"
+	"github.com/ageeknamedslickback/whatsapp-chat/usecases"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -26,13 +29,21 @@ func main() {
 	if err != nil {
 		panic("failed to connect database")
 	}
+	db.AutoMigrate(domain.Message{})
 
-	_ = database.NewMessageRepository(db)
+	d := database.NewMessageRepository(db)
+	s := usecases.NewMessageService(*d)
+	h := rest.NewRestHandlers(*s)
 
-	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
+	srv := handler.NewDefaultServer(
+		generated.NewExecutableSchema(
+			generated.Config{Resolvers: &graph.Resolver{}},
+		),
+	)
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)
+	http.HandleFunc("/message", h.IncomingMessage)
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
