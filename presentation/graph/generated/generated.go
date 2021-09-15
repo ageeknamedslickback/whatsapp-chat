@@ -68,7 +68,6 @@ type ComplexityRoot struct {
 		SmsSid              func(childComplexity int) int
 		SmsStatus           func(childComplexity int) int
 		Status              func(childComplexity int) int
-		SubresourceURLs     func(childComplexity int) int
 		TimeStamp           func(childComplexity int) int
 		To                  func(childComplexity int) int
 		URI                 func(childComplexity int) int
@@ -277,13 +276,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Message.Status(childComplexity), true
 
-	case "Message.subresourceURLs":
-		if e.complexity.Message.SubresourceURLs == nil {
-			break
-		}
-
-		return e.complexity.Message.SubresourceURLs(childComplexity), true
-
 	case "Message.timeStamp":
 		if e.complexity.Message.TimeStamp == nil {
 			break
@@ -439,7 +431,6 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var sources = []*ast.Source{
 	{Name: "presentation/graph/schema.graphqls", Input: `scalar Time
-scalar Map
 
 type Message {
   accountSid: String!
@@ -468,7 +459,6 @@ type Message {
   priceUnit: String
   sid: String!
   status: String!
-  subresourceURLs: Map!
   uri: String!
 }
 
@@ -1481,41 +1471,6 @@ func (ec *executionContext) _Message_status(ctx context.Context, field graphql.C
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Message_subresourceURLs(ctx context.Context, field graphql.CollectedField, obj *domain.Message) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Message",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.SubresourceURLs, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(map[string]interface{})
-	fc.Result = res
-	return ec.marshalNMap2map(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Message_uri(ctx context.Context, field graphql.CollectedField, obj *domain.Message) (ret graphql.Marshaler) {
@@ -3092,11 +3047,6 @@ func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "subresourceURLs":
-			out.Values[i] = ec._Message_subresourceURLs(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "uri":
 			out.Values[i] = ec._Message_uri(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -3485,27 +3435,6 @@ func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interf
 
 func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
 	res := graphql.MarshalBoolean(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
-}
-
-func (ec *executionContext) unmarshalNMap2map(ctx context.Context, v interface{}) (map[string]interface{}, error) {
-	res, err := graphql.UnmarshalMap(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNMap2map(ctx context.Context, sel ast.SelectionSet, v map[string]interface{}) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := graphql.MarshalMap(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
