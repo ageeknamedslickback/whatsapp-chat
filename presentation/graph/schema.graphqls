@@ -1,0 +1,47 @@
+scalar Time
+scalar Map
+
+type Message {
+  accountSid: String!
+  from: String!
+  to: String!
+  body: String!
+  numMedia: String!
+  numSegments: String!
+  apiVersion: String!
+  profileName: String!
+  smsMessageSid: String!
+  smsSid: String!
+  smsStatus: String!
+  waId: String!
+  mediaContentType: String!
+  mediaUrl: String!
+  timeStamp: Time!
+  dateCreated: String!
+  dateSent: String!
+  dateUpdated: String!
+  direction: String!
+  errorCode: String
+  errorMessage: String
+  messagingServiceSID: String!
+  price: String
+  priceUnit: String
+  sid: String!
+  status: String!
+  subresourceURLs: Map!
+  uri: String!
+}
+
+type Sender {
+  phoneNumber: String!
+  profileName: String!
+}
+
+type Mutation {
+  sendMessage(to: String!, body: String!): Message!
+}
+
+type Subscription {
+  Senders: [Sender!]!
+  Messages(phone: String!): [Message!]!
+}
