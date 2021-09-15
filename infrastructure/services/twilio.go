@@ -8,12 +8,10 @@ import (
 	"net/url"
 	"os"
 	"strings"
-
-	"github.com/ageeknamedslickback/whatsapp-chat/domain"
 )
 
 // MakePostRequest makes a post request to Twilio's conversatinal API
-func MakePostRequest(payload url.Values, target domain.Message) error {
+func MakePostRequest(payload url.Values, target interface{}) error {
 	url := fmt.Sprintf(
 		"https://api.twilio.com/2010-04-01/Accounts/%s/Messages.json",
 		os.Getenv("TWILIO_ACCOUNT_SID"),
@@ -30,6 +28,8 @@ func MakePostRequest(payload url.Values, target domain.Message) error {
 		os.Getenv("TWILIO_ACCOUNT_SID"),
 		os.Getenv("TWILIO_AUTH_TOKEN"),
 	)
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -42,7 +42,7 @@ func MakePostRequest(payload url.Values, target domain.Message) error {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode > 299 {
 		return fmt.Errorf(
 			"status code %v returned with data %s",
 			resp.StatusCode,
@@ -50,7 +50,7 @@ func MakePostRequest(payload url.Values, target domain.Message) error {
 		)
 	}
 
-	if err := json.Unmarshal(b, &target); err != nil {
+	if err := json.Unmarshal(b, target); err != nil {
 		return fmt.Errorf(
 			"failed to unmarshall response to target message: %w",
 			err,

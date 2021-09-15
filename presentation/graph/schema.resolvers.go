@@ -12,7 +12,7 @@ import (
 )
 
 func (r *mutationResolver) SendMessage(ctx context.Context, to string, body string) (*domain.Message, error) {
-	panic(fmt.Errorf("not implemented"))
+	return r.service.SendMessage(ctx, to, body)
 }
 
 func (r *subscriptionResolver) Senders(ctx context.Context) (<-chan []*domain.Sender, error) {

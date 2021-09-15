@@ -34,10 +34,11 @@ func main() {
 	d := database.NewMessageRepository(db)
 	s := usecases.NewMessageService(*d)
 	h := rest.NewRestHandlers(*s)
+	r := graph.NewResolver(*s)
 
 	srv := handler.NewDefaultServer(
 		generated.NewExecutableSchema(
-			generated.Config{Resolvers: &graph.Resolver{}},
+			generated.Config{Resolvers: r},
 		),
 	)
 
