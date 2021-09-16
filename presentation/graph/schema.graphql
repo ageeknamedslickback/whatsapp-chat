@@ -28,11 +28,14 @@ type Message {
   sid: String!
   status: String!
   uri: String!
+  read: Boolean!
 }
 
 type Sender {
   phoneNumber: String!
   profileName: String!
+  unreadMessagesCount: Int!
+  messages: [Message]!
 }
 
 type Mutation {
@@ -40,6 +43,6 @@ type Mutation {
 }
 
 type Subscription {
-  Senders: [Sender!]!
-  Messages(phone: String!): [Message!]!
+  senders: [Sender!]!
+  messages(phone: String!): [Message!]!
 }
