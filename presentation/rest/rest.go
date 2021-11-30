@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/ageeknamedslickback/whatsapp-chat/domain"
+	"github.com/ageeknamedslickback/whatsapp-chat/presentation/graph"
 	"github.com/ageeknamedslickback/whatsapp-chat/usecases"
 )
 
@@ -17,11 +18,12 @@ type Handlers interface {
 // Rest ..
 type Rest struct {
 	service usecases.MessagesService
+	graph   graph.Resolver
 }
 
 // NewRestHandlers ..
-func NewRestHandlers(s usecases.MessagesService) *Rest {
-	return &Rest{service: s}
+func NewRestHandlers(s usecases.MessagesService, g graph.Resolver) *Rest {
+	return &Rest{service: s, graph: g}
 }
 
 // IncomingMessage is Twilio's incoming message webhook
@@ -34,7 +36,7 @@ func (rst *Rest) IncomingMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := rst.service.InboundMessages(domain.Message{
+	m, err := rst.service.InboundMessages(domain.Message{
 		AccountSid:       r.Form.Get("AccountSid"),
 		From:             r.Form.Get("From"),
 		To:               r.Form.Get("To"),
@@ -52,6 +54,11 @@ func (rst *Rest) IncomingMessage(w http.ResponseWriter, r *http.Request) {
 	},
 	)
 	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err = rst.graph.AddMessagesToChannel(m.From, m.ProfileName); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

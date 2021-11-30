@@ -63,6 +63,7 @@ type ComplexityRoot struct {
 		Price               func(childComplexity int) int
 		PriceUnit           func(childComplexity int) int
 		ProfileName         func(childComplexity int) int
+		Read                func(childComplexity int) int
 		Sid                 func(childComplexity int) int
 		SmsMessageSid       func(childComplexity int) int
 		SmsSid              func(childComplexity int) int
@@ -82,8 +83,10 @@ type ComplexityRoot struct {
 	}
 
 	Sender struct {
-		PhoneNumber func(childComplexity int) int
-		ProfileName func(childComplexity int) int
+		Messages            func(childComplexity int) int
+		PhoneNumber         func(childComplexity int) int
+		ProfileName         func(childComplexity int) int
+		UnreadMessagesCount func(childComplexity int) int
 	}
 
 	Subscription struct {
@@ -241,6 +244,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Message.ProfileName(childComplexity), true
 
+	case "Message.read":
+		if e.complexity.Message.Read == nil {
+			break
+		}
+
+		return e.complexity.Message.Read(childComplexity), true
+
 	case "Message.sid":
 		if e.complexity.Message.Sid == nil {
 			break
@@ -316,6 +326,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SendMessage(childComplexity, args["to"].(string), args["body"].(string)), true
 
+	case "Sender.messages":
+		if e.complexity.Sender.Messages == nil {
+			break
+		}
+
+		return e.complexity.Sender.Messages(childComplexity), true
+
 	case "Sender.phoneNumber":
 		if e.complexity.Sender.PhoneNumber == nil {
 			break
@@ -330,19 +347,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Sender.ProfileName(childComplexity), true
 
-	case "Subscription.Messages":
+	case "Sender.unreadMessagesCount":
+		if e.complexity.Sender.UnreadMessagesCount == nil {
+			break
+		}
+
+		return e.complexity.Sender.UnreadMessagesCount(childComplexity), true
+
+	case "Subscription.messages":
 		if e.complexity.Subscription.Messages == nil {
 			break
 		}
 
-		args, err := ec.field_Subscription_Messages_args(context.TODO(), rawArgs)
+		args, err := ec.field_Subscription_messages_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
 		return e.complexity.Subscription.Messages(childComplexity, args["phone"].(string)), true
 
-	case "Subscription.Senders":
+	case "Subscription.senders":
 		if e.complexity.Subscription.Senders == nil {
 			break
 		}
@@ -460,11 +484,14 @@ type Message {
   sid: String!
   status: String!
   uri: String!
+  read: Boolean!
 }
 
 type Sender {
   phoneNumber: String!
   profileName: String!
+  unreadMessagesCount: Int!
+  messages: [Message]!
 }
 
 type Mutation {
@@ -472,8 +499,8 @@ type Mutation {
 }
 
 type Subscription {
-  Senders: [Sender!]!
-  Messages(phone: String!): [Message!]!
+  senders: [Sender!]!
+  messages(phone: String!): [Message!]!
 }
 `, BuiltIn: false},
 }
@@ -522,7 +549,7 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Subscription_Messages_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Subscription_messages_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -1508,6 +1535,41 @@ func (ec *executionContext) _Message_uri(ctx context.Context, field graphql.Coll
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Message_read(ctx context.Context, field graphql.CollectedField, obj *domain.Message) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Message",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Read, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_sendMessage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1691,7 +1753,77 @@ func (ec *executionContext) _Sender_profileName(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Subscription_Senders(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
+func (ec *executionContext) _Sender_unreadMessagesCount(ctx context.Context, field graphql.CollectedField, obj *domain.Sender) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Sender",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UnreadMessagesCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Sender_messages(ctx context.Context, field graphql.CollectedField, obj *domain.Sender) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Sender",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Messages, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]domain.Message)
+	fc.Result = res
+	return ec.marshalNMessage2ᚕgithubᚗcomᚋageeknamedslickbackᚋwhatsappᚑchatᚋdomainᚐMessage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Subscription_senders(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1736,7 +1868,7 @@ func (ec *executionContext) _Subscription_Senders(ctx context.Context, field gra
 	}
 }
 
-func (ec *executionContext) _Subscription_Messages(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
+func (ec *executionContext) _Subscription_messages(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1753,7 +1885,7 @@ func (ec *executionContext) _Subscription_Messages(ctx context.Context, field gr
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Subscription_Messages_args(ctx, rawArgs)
+	args, err := ec.field_Subscription_messages_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return nil
@@ -3052,6 +3184,11 @@ func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "read":
+			out.Values[i] = ec._Message_read(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3145,6 +3282,16 @@ func (ec *executionContext) _Sender(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "unreadMessagesCount":
+			out.Values[i] = ec._Sender_unreadMessagesCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "messages":
+			out.Values[i] = ec._Sender_messages(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3169,10 +3316,10 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 	}
 
 	switch fields[0].Name {
-	case "Senders":
-		return ec._Subscription_Senders(ctx, fields[0])
-	case "Messages":
-		return ec._Subscription_Messages(ctx, fields[0])
+	case "senders":
+		return ec._Subscription_senders(ctx, fields[0])
+	case "messages":
+		return ec._Subscription_messages(ctx, fields[0])
 	default:
 		panic("unknown field " + strconv.Quote(fields[0].Name))
 	}
@@ -3443,8 +3590,61 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) marshalNMessage2githubᚗcomᚋageeknamedslickbackᚋwhatsappᚑchatᚋdomainᚐMessage(ctx context.Context, sel ast.SelectionSet, v domain.Message) graphql.Marshaler {
 	return ec._Message(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMessage2ᚕgithubᚗcomᚋageeknamedslickbackᚋwhatsappᚑchatᚋdomainᚐMessage(ctx context.Context, sel ast.SelectionSet, v []domain.Message) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOMessage2githubᚗcomᚋageeknamedslickbackᚋwhatsappᚑchatᚋdomainᚐMessage(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
 }
 
 func (ec *executionContext) marshalNMessage2ᚕᚖgithubᚗcomᚋageeknamedslickbackᚋwhatsappᚑchatᚋdomainᚐMessageᚄ(ctx context.Context, sel ast.SelectionSet, v []*domain.Message) graphql.Marshaler {
@@ -3864,6 +4064,10 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	return graphql.MarshalBoolean(*v)
+}
+
+func (ec *executionContext) marshalOMessage2githubᚗcomᚋageeknamedslickbackᚋwhatsappᚑchatᚋdomainᚐMessage(ctx context.Context, sel ast.SelectionSet, v domain.Message) graphql.Marshaler {
+	return ec._Message(ctx, sel, &v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {

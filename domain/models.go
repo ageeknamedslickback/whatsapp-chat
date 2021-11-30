@@ -44,12 +44,15 @@ type Message struct {
 	Sid                 string    `json:"sid"`
 	Status              string    `json:"status"`
 	URI                 string    `json:"uri"`
+	Read                bool      `json:"read"`
 }
 
 // Sender reps a new whatsapp sender, details of a person/number that sends the message
 type Sender struct {
-	PhoneNumber string `json:"phoneNumber"`
-	ProfileName string `json:"profileName"`
+	PhoneNumber         string    `json:"phoneNumber"`
+	ProfileName         string    `json:"profileName"`
+	UnreadMessagesCount int       `json:"unreadMessageCount"`
+	Messages            []Message `json:"messages"`
 }
 
 // Response reps Twilio's webhook response

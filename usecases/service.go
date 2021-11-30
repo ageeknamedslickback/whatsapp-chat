@@ -21,6 +21,7 @@ type MessageUsecases interface {
 		ctx context.Context,
 		to, body string,
 	) (*domain.Message, error)
+	GetMessages(phone string) ([]domain.Message, error)
 }
 
 // MessagesService ..
@@ -75,4 +76,9 @@ func (s *MessagesService) SendMessage(
 	}
 
 	return &message, nil
+}
+
+// GetMessages returns messages sent by/to the provided phone number
+func (s *MessagesService) GetMessages(phone string) ([]domain.Message, error) {
+	return s.datastore.GetMessages(phone)
 }
